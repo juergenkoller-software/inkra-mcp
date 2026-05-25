@@ -1,0 +1,12 @@
+{
+  "_comment": "Example Claude Desktop config for Inkra MCP. Copy the 'inkra' entry into your ~/Library/Application Support/Claude/claude_desktop_config.json under 'mcpServers'.",
+  "mcpServers": {
+    "inkra": {
+      "command": "/usr/local/bin/InkraMCP",
+      "env": {
+        "INKRA_PORT": "22300",
+        "INKRA_TOKEN": "<paste-from-inkra-settings-api-integrations>"
+      }
+    }
+  }
+}
