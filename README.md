@@ -98,7 +98,7 @@ Same pattern — stdio MCP server, two env vars.
 ┌────────────────┐  JSON-RPC stdio   ┌────────────────┐  HTTP+Bearer   ┌────────────────┐
 │  Claude/Cursor │ ───────────────►  │  InkraMCP      │ ─────────────► │  Inkra.app     │
 │  (MCP client)  │ ◄───────────────  │   (this repo)  │ ◄───────────── │  (port 22300)  │
-└────────────────┘                    └────────────────┘                └────────────────┘
+└────────────────┘                   └────────────────┘                └────────────────┘
 ```
 
 The bridge forwards JSON-RPC over stdio to Inkra's local HTTP MCP endpoint. The app handles document state (NSTextView with TextKit 2), AST-based syntax highlighting, KaTeX/Mermaid live preview, undo/redo, session restore, and exports.
