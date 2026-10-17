@@ -64,6 +64,12 @@ actor InkraClient {
             + "in Inkra → Settings → API. The MCP server is part of the Inkra version from the website."
     }
 
+    /// Resolves "/path?query" against the base URL. `appendingPathComponent`
+    /// percent-encodes the "?", so the app saw "/path%3Fquery" and answered 404.
+    private func url(_ path: String) -> URL {
+        URL(string: path, relativeTo: base)?.absoluteURL ?? base.appendingPathComponent(path)
+    }
+
     private func authedRequest(_ url: URL) -> URLRequest {
         var req = URLRequest(url: url)
         if let token, !token.isEmpty {
@@ -86,15 +92,15 @@ actor InkraClient {
     }
 
     func get(_ path: String) async throws -> [String: Any] {
-        object(try await send(authedRequest(base.appendingPathComponent(path))))
+        object(try await send(authedRequest(url(path))))
     }
 
     func getText(_ path: String) async throws -> String {
-        String(data: try await send(authedRequest(base.appendingPathComponent(path))), encoding: .utf8) ?? ""
+        String(data: try await send(authedRequest(url(path))), encoding: .utf8) ?? ""
     }
 
     func post(_ path: String, body: [String: Any] = [:]) async throws -> [String: Any] {
-        var req = authedRequest(base.appendingPathComponent(path))
+        var req = authedRequest(url(path))
         req.httpMethod = "POST"
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -102,7 +108,7 @@ actor InkraClient {
     }
 
     func delete(_ path: String, body: [String: Any] = [:]) async throws -> [String: Any] {
-        var req = authedRequest(base.appendingPathComponent(path))
+        var req = authedRequest(url(path))
         req.httpMethod = "DELETE"
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
