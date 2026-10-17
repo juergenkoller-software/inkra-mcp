@@ -8,9 +8,11 @@
 
 **Drive a native macOS Markdown editor from Claude, Cursor, or any MCP client.**
 
-This is the official [Model Context Protocol](https://modelcontextprotocol.io) bridge for [**Inkra**](https://store.juergenkoller.software/en/apps/inkra) — a native macOS Markdown editor (SwiftUI + AppKit, not Electron) with live KaTeX/Mermaid preview and a built-in AI assistant.
+This is the official [Model Context Protocol](https://modelcontextprotocol.io) bridge for [**Inkra**](https://store.juergenkoller.software/en/apps/inkra?mtm_source=mcp&mtm_medium=agent&mtm_campaign=inkra-mcp&mtm_content=github-readme) — a native macOS Markdown editor (SwiftUI + AppKit, not Electron) with live KaTeX/Mermaid preview and a built-in AI assistant.
 
-> **You need the Inkra app installed and running.** This MCP server is a stdio→HTTP bridge — Inkra owns the document state, undo stack, syntax highlighting, and rendering. Get Inkra at [store.juergenkoller.software/apps/inkra](https://store.juergenkoller.software/en/apps/inkra).
+> **You need the Inkra app installed and running, with Inkra Pro.** This MCP server is a stdio→HTTP bridge — Inkra owns the document state, undo stack, syntax highlighting, and rendering. The MCP server and the REST API are part of **Inkra Pro**; the free trial includes them. Get Inkra at [store.juergenkoller.software/apps/inkra](https://store.juergenkoller.software/en/apps/inkra?mtm_source=mcp&mtm_medium=agent&mtm_campaign=inkra-mcp&mtm_content=github-readme).
+>
+> The Inkra version from the website already contains this bridge as `inkra-mcp-server`. Inkra → Settings → API → **Copy MCP Config** gives you a ready-made configuration. Build from this repository only if you want to audit or modify the bridge.
 
 ---
 
@@ -41,8 +43,18 @@ Every tool operates on the **currently open document** in the Inkra app — so A
 ### Prerequisites
 
 1. **macOS 14 (Sonoma) or later**
-2. **Inkra app installed and running** — [get it here](https://store.juergenkoller.software/en/apps/inkra) (free during beta, available on Mac App Store and direct download)
-3. **Swift 5.9+** (Xcode 15+) if building from source
+2. **Inkra app installed and running** — [get it here](https://store.juergenkoller.software/en/apps/inkra?mtm_source=mcp&mtm_medium=agent&mtm_campaign=inkra-mcp&mtm_content=github-readme) (website version; the Mac App Store version does not include the MCP server)
+3. **Inkra Pro**, or the free trial — without it the app answers every MCP call with “Inkra Pro required”
+4. **API enabled** in Inkra → Settings → API (“API Enabled”)
+5. **Swift 5.9+** (Xcode 15+) only if building from source
+
+### Use the bridge inside the app (recommended)
+
+```
+/Applications/Inkra.app/Contents/MacOS/inkra-mcp-server
+```
+
+It always matches the installed app version.
 
 ### Build from source
 
@@ -67,24 +79,24 @@ See [Releases](https://github.com/juergenkoller-software/inkra-mcp/releases).
 {
   "mcpServers": {
     "inkra": {
-      "command": "/path/to/InkraMCP",
+      "command": "/Applications/Inkra.app/Contents/MacOS/inkra-mcp-server",
       "env": {
-        "INKRA_PORT": "22300",
-        "INKRA_TOKEN": "your-token-here"
+        "INKRA_API_PORT": "42932",
+        "INKRA_API_TOKEN": "your-token-here"
       }
     }
   }
 }
 ```
 
-Get `INKRA_TOKEN` from **Inkra → Settings → API & Integrations**.
+Get `INKRA_API_TOKEN` from **Inkra → Settings → API**, or use **Copy MCP Config** there, which fills in path, port, and token.
 
 ### Claude Code
 
 ```bash
-claude mcp add inkra /path/to/InkraMCP \
-  --env INKRA_PORT=22300 \
-  --env INKRA_TOKEN=your-token-here
+claude mcp add inkra /Applications/Inkra.app/Contents/MacOS/inkra-mcp-server \
+  --env INKRA_API_PORT=42932 \
+  --env INKRA_API_TOKEN=your-token-here
 ```
 
 ### Cursor / other MCP clients
@@ -98,11 +110,11 @@ Same pattern — stdio MCP server, two env vars.
 ```
 ┌────────────────┐  JSON-RPC stdio   ┌────────────────┐  HTTP+Bearer   ┌────────────────┐
 │  Claude/Cursor │ ───────────────►  │  InkraMCP      │ ─────────────► │  Inkra.app     │
-│  (MCP client)  │ ◄───────────────  │   (this repo)  │ ◄───────────── │  (port 22300)  │
+│  (MCP client)  │ ◄───────────────  │   (this repo)  │ ◄───────────── │  (port 42932)  │
 └────────────────┘                   └────────────────┘                └────────────────┘
 ```
 
-The bridge forwards JSON-RPC over stdio to Inkra's local HTTP MCP endpoint. The app handles document state (NSTextView with TextKit 2), AST-based syntax highlighting, KaTeX/Mermaid live preview, undo/redo, session restore, and exports.
+The bridge translates MCP tool calls into requests to Inkra's local REST API. The app handles document state (NSTextView with TextKit 2), AST-based syntax highlighting, KaTeX/Mermaid live preview, undo/redo, session restore, and exports.
 
 ---
 
@@ -110,8 +122,23 @@ The bridge forwards JSON-RPC over stdio to Inkra's local HTTP MCP endpoint. The 
 
 | Variable | Default | Description |
 |---|---|---|
-| `INKRA_PORT` | `22300` | Port of Inkra's local HTTP server |
-| `INKRA_TOKEN` | _(none)_ | Bearer token from Inkra Settings (required) |
+| `INKRA_API_PORT` | `42932` | Port of Inkra's local HTTP server (Inkra → Settings → API) |
+| `INKRA_API_TOKEN` | _(none)_ | Bearer token from Inkra → Settings → API (required) |
+
+---
+
+## Errors
+
+Every refusal comes back as an MCP error (`isError: true`) with a sentence the agent can act on:
+
+| Situation | What the bridge reports |
+|---|---|
+| Inkra not running, or API switched off | Inkra is not reachable at `http://localhost:<port>`; open Inkra and turn on “API Enabled” |
+| Token missing or wrong (HTTP 401) | Set `INKRA_API_TOKEN` to the token in Inkra → Settings → API |
+| No Inkra Pro (HTTP 403 `inkra_pro_required`) | The MCP server is part of Inkra Pro; only the user can upgrade, in the app or in the store |
+| Any other HTTP error | Status code and Inkra's error text |
+
+Before version 0.2.0 the bridge ignored the HTTP status, so a wrong token or the Pro lock looked like a successful call (“OK, 0 characters”).
 
 ---
 
@@ -125,11 +152,11 @@ Inkra is a native macOS Markdown editor — **not** an Electron app. Highlights:
 - **Built-in AI assistant** — Claude, OpenAI, Ollama, or Inkra KI (dedicated endpoint, no API key needed)
 - **Export** — HTML and PDF with full layout, formulas, diagrams, code blocks
 - **Session restore** — folder, file, cursor, scroll position
-- **MCP server** (this repo) + REST API with Swagger UI
-- **23 EU language localizations**
-- **Available on Mac App Store + direct download**
+- **MCP server** (this repo) + REST API with Swagger UI — part of Inkra Pro
+- **24 EU languages**
+- **Available on the Mac App Store and as a direct download** — the MCP server ships with the direct download
 
-→ **[Get Inkra at store.juergenkoller.software](https://store.juergenkoller.software/en/apps/inkra)**
+→ **[Get Inkra at store.juergenkoller.software](https://store.juergenkoller.software/en/apps/inkra?mtm_source=mcp&mtm_medium=agent&mtm_campaign=inkra-mcp&mtm_content=github-readme)**
 
 ---
 
