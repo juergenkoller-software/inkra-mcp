@@ -67,7 +67,7 @@ swift build -c release
 
 ### Pre-built binary
 
-See [Releases](https://github.com/juergenkoller-software/inkra-mcp/releases).
+Not needed on a Mac: the website version of Inkra ships the bridge (see above). The binary attached to [Releases](https://github.com/juergenkoller-software/inkra-mcp/releases) is a static Linux x86_64 build for container-based MCP registries such as Glama; it does not run on macOS.
 
 ---
 
