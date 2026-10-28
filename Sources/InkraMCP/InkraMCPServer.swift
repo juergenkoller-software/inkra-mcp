@@ -6,7 +6,7 @@ struct InkraMCPServer {
     static func main() async throws {
         let server = Server(
             name: "inkra",
-            version: "0.2.0",
+            version: "1.1.0",
             capabilities: .init(tools: .init(listChanged: false))
         )
 

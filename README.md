@@ -138,7 +138,7 @@ Every refusal comes back as an MCP error (`isError: true`) with a sentence the a
 | No Inkra Pro (HTTP 403 `inkra_pro_required`) | The MCP server is part of Inkra Pro; only the user can upgrade, in the app or in the store |
 | Any other HTTP error | Status code and Inkra's error text |
 
-Before version 0.2.0 the bridge ignored the HTTP status, so a wrong token or the Pro lock looked like a successful call (“OK, 0 characters”).
+Before version 1.1.0 the bridge ignored the HTTP status, so a wrong token or the Pro lock looked like a successful call (“OK, 0 characters”).
 
 ---
 

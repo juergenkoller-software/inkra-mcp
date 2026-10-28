@@ -5,7 +5,7 @@ import FoundationNetworking
 
 /// A non-2xx answer from Inkra's local API.
 ///
-/// Before 0.2.0 the bridge ignored the HTTP status: a missing token or the
+/// Before 1.1.0 the bridge ignored the HTTP status: a missing token or the
 /// Inkra Pro lock came back as a normal tool result ("OK, 0 characters").
 /// Now every refusal becomes an MCP error with a sentence the agent can act on.
 struct InkraAPIError: Error {
